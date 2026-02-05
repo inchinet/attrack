@@ -2,8 +2,7 @@
 
 A collection of lightweight shell scripts designed to protect Linux servers (specifically Ubuntu/Oracle Cloud) from automated attacks, DDoS attempts, and rapid-fire requests.
 
-![Internet attack](https://github.com/inchinet/attack/blob/main/issue.png)
-
+![Internet attack](https://github.com/inchinet/attack/blob/master/issue.png)
 
 ## 🚀 Overview
 
@@ -33,16 +32,31 @@ These scripts monitor your Apache/Web server access logs in real-time. If an IP 
 
 ### 1. Prerequisites
 - **Fail2ban**: Must be installed and running.
-- **Clawdbot**: (Optional) For WhatsApp notifications.
+- **OpenClaw/Clawdbot**: (Optional) For WhatsApp / etc notifications.
 - **Apache**: Access logs should be in `/var/log/apache2/access.log`.
 
-### 2. Configuration
+### 2. about fail2ban
+sudo cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.local
+sudo nano /etc/fail2ban/jail.local
+(bantime = -1 meant permanent ban)
+
+[DEFAULT]
+bantime = -1
+
+[apache-auth]
+enabled = true
+port    = http,https
+logpath = %(apache_error_log)s
+
+sudo systemctl restart fail2ban
+
+### 3. Configuration
 Open `trafficmonitor.sh` and set your desired threshold:
 ```bash
 THRESHOLD=60  # Maximum requests per minute
 ```
 
-### 3. Automate with Cron
+### 4. Automate with Cron
 To run the check and send a report every night at 23:59:
 1. Run `crontab -e`
 2. Add the following line:
@@ -65,4 +79,3 @@ chmod 700 send_security_report.sh
 
 ## 📜 License
 MIT License - Feel free to use and modify!
-
