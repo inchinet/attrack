@@ -1,7 +1,7 @@
 # Linux Traffic & Security Monitor
 
 A collection of lightweight shell scripts designed to protect Linux servers (specifically Ubuntu/Oracle Cloud) from automated attacks, DDoS attempts, and rapid-fire requests.
-
+![Internet attack](https://github.com/inchinet/attack/blob/main/issue.png)
 
 ## 🚀 Overview
 
@@ -34,10 +34,13 @@ These scripts monitor your Apache/Web server access logs in real-time. If an IP 
 - **OpenClaw/Clawdbot**: (Optional) For WhatsApp / etc notifications.
 - **Apache**: Access logs should be in `/var/log/apache2/access.log`.
 
-### 2. about fail2ban
+### 2. about fail2ban 
+(bantime = -1 meant permanent ban)
+
+```bash
 sudo cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.local
 sudo nano /etc/fail2ban/jail.local
-(bantime = -1 meant permanent ban)
+```
 
 ```bash
 [DEFAULT]
@@ -49,7 +52,9 @@ port    = http,https
 logpath = %(apache_error_log)s
 ```
 
+```bash
 sudo systemctl restart fail2ban
+```
 
 ### 3. Configuration
 Open `trafficmonitor.sh` and set your desired threshold:
