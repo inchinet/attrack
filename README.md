@@ -2,6 +2,9 @@
 
 A collection of lightweight shell scripts designed to protect Linux servers (specifically Ubuntu/Oracle Cloud) from automated attacks, DDoS attempts, and rapid-fire requests.
 
+
+![internet attrack](https://github.com/inchinet/attrack/blob/main/issue.png)
+
 ## 🚀 Overview
 
 These scripts monitor your Apache/Web server access logs in real-time. If an IP address exceeds a set threshold of requests within a single minute, the system automatically triggers a permanent ban using `fail2ban`.
