@@ -25,3 +25,4 @@ sudo awk -v cutoff_epoch="$(date -d '24 hours ago' +%s)" ' \
     echo "ALERT: $count requests from $ip during minute $minute. Triggering ban..."
     sudo fail2ban-client set "$JAIL" banip "$ip" > /dev/null 2>&1
 done
+

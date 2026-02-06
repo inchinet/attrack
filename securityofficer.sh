@@ -1,28 +1,43 @@
 #!/bin/bash
 
-# Define the jail to use for banning
-JAIL="apache-auth"
+# Get the timestamp for 24 hours ago in epoch format
+CUTOFF_EPOCH=$(date -d '24 hours ago' +%s)
 
-# Look for suspicious authentication failures or specific attack patterns in logs
-# This script can be customized to grep for specific 403/404 patterns
-sudo awk -v cutoff_epoch="$(date -d '24 hours ago' +%s)" ' \
-     BEGIN {\
-         split("Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec", month, " ");\
-         for(i=1; i<=12; i++) m[month[i]]=i;\
-     }\
-     {\
-         split(substr($4, 2), dt, ":");\
-         split(dt[1], d, "/");\
-         log_epoch = mktime(d[3] " " m[d[2]] " " d[1] " " dt[2] " " dt[3] " " dt[4]);\
-         if (log_epoch >= cutoff_epoch) {\
-             print $1, substr($4, 2, 17);\
-         }\
-     }' /var/log/apache2/access.log | sort | uniq -c | awk ' \
-     {\
-         if ($1 >= 100) {\
-             print $1, $2, $3\
-         }\
-     }' | while read count ip minute; do
-    echo "SECURITY ALERT: $count suspicious requests from $ip. Triggering ban..."
-    sudo fail2ban-client set "$JAIL" banip "$ip" > /dev/null 2>&1
+# Extract banned IPs and their jails from fail2ban.log within the last 24 hours
+sudo grep -E 'fail2ban.actions.*\[.*\] (Ban|Drop)' /var/log/fail2ban.log | \
+awk -v cutoff_epoch="$CUTOFF_EPOCH" '
+     BEGIN {
+         FS="[ ,|]"; # Split by space, comma, or pipe
+     }
+     {
+         # Extract date and time parts
+         split($1, date_parts, "-");
+         split($2, time_parts, ":");
+         
+         # Convert YYYY-MM-DD HH:MM:SS to epoch
+         log_epoch = mktime(date_parts[1]" "date_parts[2]" "date_parts[3]" "time_parts[1]" "time_parts[2]" "time_parts[3]);
+         
+         if (log_epoch >= cutoff_epoch) {
+             # Look for the jail name and IP address
+             jail = "unknown"
+             ip = ""
+             for (i=1; i<=NF; i++) {
+                 # Capture jail name from [jail-name]
+                 if ($i ~ /^\[.*\]$/) {
+                     jail = substr($i, 2, length($i)-2)
+                 }
+                 if (($i == "Ban" || $i == "Drop") && $(i+1) ~ /^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$/) {
+                     ip = $(i+1);
+                     if (ip != "" && jail != "") {
+                         print jail, ip;
+                         break;
+                     }
+                 }
+             }
+         }
+     }' | sort -u | while read jail ip; do
+    # Fetch country information for each IP
+    country=$(curl -s -m 5 "https://ipinfo.io/$ip/country" || echo "??")
+    country=$(echo "$country" | tr -d '\n')
+    echo "$ip ($country) [$jail]"
 done
